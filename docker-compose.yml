@@ -1,0 +1,21 @@
+services:
+  line-pregnant:
+    build: .
+    ports:
+      - "3012:3001"
+    environment:
+      TZ: Asia/Bangkok
+      DATABASE_URL: postgresql://play2:123456@db:5432/linedb?schema=public
+    networks:
+      - dev_network
+    volumes:
+      - pregdb:/var/lib/postgresql/data
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start"
+
+networks:
+  dev_network:
+    external: true
+
+volumes:
+  pregdb:
