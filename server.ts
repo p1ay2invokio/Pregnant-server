@@ -367,6 +367,31 @@ app.get("/all_information_details", async (req: Request, res: Response) => {
     res.status(200).send(users)
 })
 
+app.delete("/del_user/:id", async (req: Request, res: Response) => {
+
+    let { id } = req.params
+
+    await prisma.takemeds.deleteMany({
+        where: {
+            userId: Number(id)
+        }
+    })
+
+    await prisma.behaves.deleteMany({
+        where: {
+            userId: Number(id)
+        }
+    })
+
+    await prisma.users.delete({
+        where: {
+            id: Number(id)
+        }
+    })
+
+    res.status(200).send("del ok")
+})
+
 
 app.listen(3001, () => {
     console.log(`Server is running on port 3001`)
