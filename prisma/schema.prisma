@@ -28,6 +28,12 @@ model Users{
   abort String
   line_userId String
   done_day Int?
+  qtychild Int?
+  lastchildyear String?
+  lastchildmonth String?
+  aborttimes Int?
+  lastabortyear String?
+  lastabortmonth String?
   behaves Behaves[]
   takemeds Takemeds[]
 }

@@ -7,6 +7,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import jwt from 'jsonwebtoken'
 import nodeCron from 'node-cron'
+import { PlayDisNotify } from 'playdis-notify'
 
 dayjs.locale('th')
 
@@ -19,6 +20,7 @@ app.use(cors())
 const token = 'n/sohO2j3uHN4fj6gmjLqpeWhUuISQha8HIThGrWybeeX6l5ifupxbFXf5YNLthcr/d4jC0wYlUxnVmjwNnQCFvlh+zdtziC5CEnXu5P9erMQTmFeNg/fZfG432QF2bdDxJJaeEUnAWBU1ZYPsUcaQdB04t89/1O/w1cDnyilFU='
 
 const line = new Line(token)
+const discord = new PlayDisNotify("https://discord.com/api/webhooks/1412463491012493512/NixhB9LjG0Z_P9CNlmtwe0jlbxcokaynHdVXQ6tK9GhBq3-v1MfaxmctdowrSojMCIF2")
 
 // const SendMessage = () => {
 //     return new Promise(async (resolve) => {
@@ -85,7 +87,7 @@ app.post("/webhook", async (req: Request, res: Response) => {
 
 app.post("/personal_info", async (req: Request, res: Response) => {
 
-    let { name, age, job, graduation, income, genre, marry, pregage, preghis, abort, line_userId } = req.body
+    let { name, age, job, graduation, income, genre, marry, pregage, preghis, abort, line_userId, qtychild, lastchildyear, lastchildmonth, aborttimes, lastabortyear, lastabortmonth } = req.body
 
     console.log(name, age)
 
@@ -108,7 +110,14 @@ app.post("/personal_info", async (req: Request, res: Response) => {
                 pregage: pregage,
                 preghis: preghis,
                 abort: abort,
-                line_userId: line_userId
+                line_userId: line_userId,
+                qtychild: Number(qtychild),
+                lastchildyear: lastchildyear,
+                lastchildmonth: lastchildmonth,
+                aborttimes: Number(aborttimes),
+                lastabortyear: lastabortyear,
+                lastabortmonth: lastabortmonth,
+                done_day: 0
             }
         })
 
@@ -308,7 +317,12 @@ const CheckSevenDays = async () => {
 
             let level = total_score / 7
             // console.log(level)
-            line.push(`ระดับคะแนนความประพฤติของคุณใน 7 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `, allBehaves[0].user.line_userId)
+            try {
+                line.push(`ระดับคะแนนความประพฤติของคุณใน 7 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `, allBehaves[0].user.line_userId)
+            } catch (err) {
+                console.log("Out of qouta LINE !!")
+                discord.push(`ระดับคะแนนความประพฤติของคุณใน 7 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `)
+            }
 
             // Delete
             allBehaves.map(async (item) => {
@@ -336,6 +350,21 @@ app.get("/line", async (req: Request, res: Response) => {
     line.push("testJA", "U14bd3b94fe086b4dbc62f26f339f5a8e")
 
     res.status(200).send("Push")
+})
+
+app.get("/all_information_details", async (req: Request, res: Response) => {
+    let users = await prisma.users.findMany({
+        include: {
+            takemeds: true,
+            behaves: true
+        },
+        orderBy: {
+            id: "desc"
+        }
+    })
+
+
+    res.status(200).send(users)
 })
 
 
