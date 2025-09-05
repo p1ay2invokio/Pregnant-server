@@ -295,7 +295,7 @@ const CheckSevenDays = async () => {
             }
         })
 
-        if (behave_user_count >= 7) {
+        if (behave_user_count >= 3) {
             let allBehaves = await prisma.behaves.findMany({
                 select: {
                     id: true,
@@ -315,23 +315,15 @@ const CheckSevenDays = async () => {
                 return total = total + item.score
             }, 0)
 
-            let level = total_score / 7
+            let level = total_score / allBehaves.length
             // console.log(level)
             try {
-                line.push(`ระดับคะแนนความประพฤติของคุณใน 7 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `, allBehaves[0].user.line_userId)
+                discord.push(`ระดับคะแนนความประพฤติของคุณใน ${allBehaves.length} วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `)
+                // line.push(`ระดับคะแนนความประพฤติของคุณใน 3 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `, allBehaves[0].user.line_userId)
             } catch (err) {
                 console.log("Out of qouta LINE !!")
-                discord.push(`ระดับคะแนนความประพฤติของคุณใน 7 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `)
+                // discord.push(`ระดับคะแนนความประพฤติของคุณใน 3 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `)
             }
-
-            // Delete
-            allBehaves.map(async (item) => {
-                await prisma.behaves.delete({
-                    where: {
-                        id: item.id
-                    }
-                })
-            })
         }
 
         console.log(behave_user_count)
@@ -339,17 +331,23 @@ const CheckSevenDays = async () => {
 }
 
 
-nodeCron.schedule('0 11 * * *', async () => {
-    CheckSevenDays()
-}, {
-    timezone: 'Asia/Bangkok'
-})
+// nodeCron.schedule('0 11 * * *', async () => {
+//     CheckSevenDays()
+// }, {
+//     timezone: 'Asia/Bangkok'
+// })
 
 
 app.get("/line", async (req: Request, res: Response) => {
     line.push("testJA", "U14bd3b94fe086b4dbc62f26f339f5a8e")
 
     res.status(200).send("Push")
+})
+
+app.get("/checkday", async (req: Request, res: Response) => {
+    CheckSevenDays()
+
+    res.status(200).send("Checked")
 })
 
 app.get("/all_information_details", async (req: Request, res: Response) => {
