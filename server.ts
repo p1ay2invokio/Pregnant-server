@@ -284,50 +284,48 @@ nodeCron.schedule('0 8 * * *', async () => {
 
 
 const CheckSevenDays = async () => {
-    let allUsers = await prisma.users.findMany()
+    const users = await prisma.users.findMany();
 
-    // console.log(allUsers)
+    for (const u of users) {
+        // ดึงเฉพาะฟิลด์ที่ต้องใช้ และดึงครั้งเดียว
+        const behaves = await prisma.behaves.findMany({
+            where: { userId: u.id },
+            select: {
+                score: true,
+                user: { select: { line_userId: true } },
+            },
+            orderBy: { date: 'desc' },
+        });
 
-    allUsers.map(async (item) => {
-        let behave_user_count = await prisma.behaves.count({
-            where: {
-                userId: item.id
+        // เงื่อนไขมีข้อมูล >= 3 รายการ
+        if (behaves.length >= 3) {
+            const total = behaves.reduce((s, b) => s + b.score, 0);
+            const level = total / behaves.length;
+            const avg = Math.round(level); // = Number(level.toFixed(0))
+
+            const colorText =
+                avg >= 67
+                    ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี'
+                    : avg >= 53
+                        ? 'สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง'
+                        : 'สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง';
+
+            const msg = `ระดับคะแนนความประพฤติของคุณ ${u.name ?? ''} ${behaves.length} วันที่บันทึก : ${avg}/80 คะแนน\n${colorText}`;
+
+            try {
+                // สำคัญ: รอให้ส่งเสร็จก่อน
+                // await discord.push(msg+u.line_userId)
+                await line.push(msg, u.line_userId);
+            } catch (e) {
+                console.error('Discord push failed for user', u.id, e);
             }
-        })
 
-        if (behave_user_count >= 3) {
-            let allBehaves = await prisma.behaves.findMany({
-                select: {
-                    id: true,
-                    date: true,
-                    score: true,
-                    user: {
-                        select: {
-                            line_userId: true
-                        }
-                    }
-                },where:{
-                    userId: item.id
-                }
-            })
-
-            // console.log(allBehaves)
-
-            let total_score = allBehaves.reduce((total, item) => {
-                return total = total + item.score
-            }, 0)
-
-            console.log("LEN : ", allBehaves.length)
-
-            let level = total_score / allBehaves.length
-            // console.log(level)
-            discord.push(`ระดับคะแนนความประพฤติของคุณ ${item.name} ${allBehaves.length} วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"}`)
-            // line.push(`ระดับคะแนนความประพฤติของคุณใน 3 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `, allBehaves[0].user.line_userId)
+            // ป้องกัน rate limit: หน่วงสัก 250–300ms ต่อข้อความ
+            await new Promise((r) => setTimeout(r, 300));
         }
+    }
+};
 
-        console.log(behave_user_count)
-    })
-}
 
 
 // nodeCron.schedule('0 11 * * *', async () => {
