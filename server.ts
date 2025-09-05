@@ -286,7 +286,7 @@ nodeCron.schedule('0 8 * * *', async () => {
 const CheckSevenDays = async () => {
     let allUsers = await prisma.users.findMany()
 
-    console.log(allUsers)
+    // console.log(allUsers)
 
     allUsers.map(async (item) => {
         let behave_user_count = await prisma.behaves.count({
@@ -306,18 +306,22 @@ const CheckSevenDays = async () => {
                             line_userId: true
                         }
                     }
+                },where:{
+                    userId: item.id
                 }
             })
 
-            console.log(allBehaves)
+            // console.log(allBehaves)
 
             let total_score = allBehaves.reduce((total, item) => {
                 return total = total + item.score
             }, 0)
 
+            console.log("LEN : ", allBehaves.length)
+
             let level = total_score / allBehaves.length
             // console.log(level)
-            discord.push(`ระดับคะแนนความประพฤติของคุณ ${item.name} ${allBehaves.length} วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `)
+            discord.push(`ระดับคะแนนความประพฤติของคุณ ${item.name} ${allBehaves.length} วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"}`)
             // line.push(`ระดับคะแนนความประพฤติของคุณใน 3 วันที่บันทึก : ${level.toFixed(0)}/80 คะแนน\n${Number(level.toFixed(0)) >= 67 ? 'สีเขียว มีพฤติกรรมการดูแลตนเองในระดับดี' : Number(level.toFixed(0)) >= 53 ? "สีเหลือง มีพฤติกรรมการดูแลตนเองในระดับปานกลาง" : "สีแดง มีพฤติกรรมการดูแลตนเองในระดับเสี่ยง/ต้องปรับปรุง"} : `, allBehaves[0].user.line_userId)
         }
 
